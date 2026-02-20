@@ -2,12 +2,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <cmath>
 #include <unistd.h>
 
 #define TARGET_FPS 60
 #define FRAME_TIME_USEC (1000000 / TARGET_FPS)
 #define MAP_SIZE 32
 #define TILE_SIZE 8
+const double todeg=180/M_PI;
+const double torad=M_PI/180;
+
+
 
 int toggle_map = 0;
 int height, width, ch;
@@ -42,7 +47,7 @@ const char *map[MAP_SIZE] = {
     "#              ##              #",
     "# #### ####### ## ####### #### #",
     "#   ##         ##         ##   #",
-    "### ## ## ########## ## ## #####",
+    "### ## ## ########## #### ## ###",
     "#      ##     ##     ##        #",
     "# ########### ## ###########   #",
     "# #           ##           #   #",
@@ -99,34 +104,55 @@ void draw() {
     mvaddnstr(0, 0, display_buffer, height * width);
 }
 
-void inputs(){
+void collision(float dx, float dy) {
+    // We update the world position
+    player.wx += dx;
+    player.wy += dy;
+    
+    // Recalculate map grid coordinates
+    player.mx = (int)(player.wx / TILE_SIZE);
+    player.my = (int)(player.wy / TILE_SIZE);
 
-    ch = getch();
-    if (ch == ERR) return;
-    // Use a small constant for movement or calculate actual delta
-    float dt = 1.0 / TARGET_FPS; 
-    if (ch == 'd'){
-        player.wx += player.speed * dt;
-        player.mx = player.wx / TILE_SIZE;
+    // Check collision: map[Y_INDEX][X_INDEX]
+    if (map[player.my][player.mx] == '#') {
+        player.wx -= dx; // Revert X
+        player.wy -= dy; // Revert Y
+        player.mx = (int)(player.wx / TILE_SIZE);
+        player.my = (int)(player.wy / TILE_SIZE);
     }
-    else if (ch == 'a'){
-        player.wx -= player.speed * dt;
-        player.mx = player.wx / TILE_SIZE;
-    }
-    else if (ch == 's'){
-        player.wy += player.speed * dt;
-        player.my = player.wy / TILE_SIZE;
-    }
-    else if (ch == 'w'){
-        player.wy -= player.speed * dt;
-        player.my = player.wy / TILE_SIZE;
-    }
-    else if (ch == 'm') toggle_map = !(toggle_map);
-    
-    
 }
 
-
+void inputs() {
+    ch = getch();
+    if (ch == ERR) return;
+    
+    float dt = 1.0 / TARGET_FPS; 
+    float mov_dist = player.speed * dt;
+    
+    // Standard Trig: X is Cos, Y is Sin
+    float dx = cos(player.r) * mov_dist;
+    float dy = sin(player.r) * mov_dist;
+    
+    if (ch == 'd') {
+        player.r += 5 * torad; // Increase rotation speed a bit
+    }
+    else if (ch == 'a') {
+        player.r -= 5 * torad;
+    }
+    else if (ch == 'w') {
+        // Move Forward: add dx and dy
+        collision(dx, 0);
+        collision(0, dy);
+    }
+    else if (ch == 's') {
+        // Move Backward: subtract dx and dy
+        collision(-dx, 0);
+        collision(0, -dy);
+    }
+    else if (ch == 'm') {
+        toggle_map = !toggle_map;
+    }
+}
 
 
 
@@ -149,7 +175,7 @@ int main() {
 
         draw();
         attron(A_BOLD);
-        mvprintw(0, 0, "FPS: %2.0f  |  Pos: [%2.1f, %2.1f]", fps, player.wx, player.wy);
+        mvprintw(0, 0, "FPS: %2.0f  |  Pos: [%2.1f, %2.1f]  |  Rot: %.2f", fps, player.wx, player.wy, player.r);
         refresh();
 
         clock_gettime(CLOCK_MONOTONIC, &end);
