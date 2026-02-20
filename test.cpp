@@ -59,7 +59,7 @@ int main() {
     // Center player inside the starting tile
     player.wx = player.mx * TILE_SIZE + (TILE_SIZE / 2.0f);
     player.wy = player.my * TILE_SIZE + (TILE_SIZE / 2.0f);
-    player.r = PI; // Facing left (180 degrees)
+    player.r = 2*PI/3; // Facing left (180 degrees)
     player.speed = 150.0f; // Scaled up to match the new TILE_SIZE
 
     bool toggle_map = true;

@@ -9,14 +9,17 @@
 #define FRAME_TIME_USEC (1000000 / TARGET_FPS)
 #define MAP_SIZE 32
 #define TILE_SIZE 8
+
 const double todeg=180/M_PI;
 const double torad=M_PI/180;
 
 
-
+float fov = torad * 70;
 int toggle_map = 0;
 int height, width, ch;
 char *display_buffer = NULL;
+int *hmap;
+char grad[11] = " .-,=+*#%@"
 
 struct p {
     float wx, wy, wz, r;
@@ -91,6 +94,19 @@ void init() {
 void insert(int y, int x, char v) {
     if (y >= 0 && y < height && x >= 0 && x < width) 
         display_buffer[width * y + x] = v;
+}
+
+void raycast(){
+    float ray_increment = (fov/width);
+    for(int i = 0; i<width; i++){
+        float r_angle = ray_increment * (i-width/2) + player.r + 0.0001;
+        float rx = sin(r_angle), ry = sin(r_angle);
+        rx = fabs(1.0/rx);
+        ry = fabs(1.0/ry);
+        float t1 = (TILE_SIZE - (player.wx - player.mx*TILE_SIZE))*rx;
+        float t2 = (TILE_SIZE - (player.wy - player.my*TILE_SIZE))*ry;
+
+    }
 }
 
 void draw() {
